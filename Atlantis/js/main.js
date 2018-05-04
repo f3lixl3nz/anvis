@@ -6,9 +6,10 @@
 
 
 var UNITWIDTH = 90;  //Breite eines Würfels in der maz
-var UNITHEIGHT = 45; //Höhe eines Würfels in der maze
+var UNITHEIGHT = 90; //Höhe eines Würfels in der maze
 var totalCubesWide; //Variable speichert, wie viele Würfelweit die maze sein wird
 var collidableObjects = []; // Variable speichert eine Array der kollidierten Objekte
+var mapSize; //zur Berechnung der Grundebene
 
 var camera, scene, renderer;
 
@@ -22,7 +23,7 @@ function init() {
 	scene = new THREE.Scene();
 
 	// Nebel in die Szene einfügen für Hintergrund
-	scene.fog = new THREE.FogExp2(0xcccccc, 0.0015);
+	scene.fog = new THREE.FogExp2(0xcccccc, 0.0005);
 	
     //Rendereinstellungen setzen
     renderer = new THREE.WebGLRenderer();
@@ -38,11 +39,13 @@ function init() {
 	
     //Kameraposition und -sicht einstellen
 	//Kamera erstellen + Einstellungen
-    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 2000);
+    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 4000);
 	//Kameraposition
-	camera.position.y = 20; //Kamerehöhe bleibt hier immer gleich
+	camera.position.y = 600; //Kamerehöhe bleibt hier immer gleich
     camera.position.x = 0;
-    camera.position.z = 0;
+    camera.position.z = 600;
+	camera.rotation.x = -0.75;
+	camera.rotation.y = 0;
 
     //Kamera hinzufügen
     scene.add(camera);
@@ -73,34 +76,39 @@ function createMazeCubes() {
 	//0 = leere Fläche, 1 = Würfel
 	var map = [ //das ist das 1. Array
 		[0, 0, 0, 0, 0, 0, ], //hier ist ein Array im Array
-		[0, 1, 1, 0, 1, 0, ],
+		[0, 2, 2, 0, 3, 0, ],
+		[0, 2, 0, 0, 0, 0, ],
 		[0, 1, 0, 0, 0, 0, ],
-		[0, 1, 0, 0, 0, 0, ],
-		[0, 1, 0, 0, 1, 0, ],
+		[0, 1, 0, 0, 3, 0, ],
 		[0, 0, 0, 0, 0, 0, ]
 	];
 
-	//Würfelgeometrie erstellen mit den globalen Variablen UNITHEIGHT und UNITWIDTH
-	var cubeGeo = new THREE.BoxGeometry(UNITWIDTH, UNITHEIGHT, UNITWIDTH);
-	//Würfelmaterial erstellen
-	var cubeMat = new THREE.MeshPhongMaterial({
-		color: 0x81cfe0,
-	});
+	
 	
 	//Würfel in der Boundingbox behalten
 	var widthOffset = UNITWIDTH / 2;
 	//Boden auf Grundfläche von Würfel setzen mit y = 0
 	var heightOffset = UNITHEIGHT / 2;
 	
-	//Sichtbarmachung der map Breite durch zeigen wie lange der 1. Array ist, also gibt die Anzahl der 1. Zeile an Nummern an. In dem Fall 6.
+	//Sichtbarmachung der map Breite durch zeigen wie lange der 2. Array ist, also gibt die Anzahl der 1. Zeile an Nummern an. In dem Fall 6.
 	//"totalCubesWide" wurde als globale Variable definiert
 	totalCubesWide = map[0].length;
 	
-	//Würfel platzieren wo 1er sind
+	//Würfel platzieren wo kein 0er ist
+	//1. for-Schleife definiert das i, um die Zeile auszuwählen
 	for (var i = 0; i < totalCubesWide; i++) {
+		//2. for-Schleife definiert das j, um die Spalte in der jeweiligen Zeile auszuwählen
 		for (var j = 0; j < map[i].length; j++) {
-			//Wenn eine 1 in der Map kommt, dann platziere einen Würfel an dieser Position
-			if (map[i][j]) {
+			//3. for-Schleife sagt, ob ein Würfel gebaut wird oder nicht un in welcher Größe abhängig des Wertes in der Matrix
+			for (var k = map[i][j]; k > 0; k = 0) {
+				
+				//Würfelgeometrie erstellen mit den globalen Variablen UNITHEIGHT und UNITWIDTH, wobei die Höhe UNITHEIGHT mit der Zahl in der Matrix multipliziert wird, um die Höhe zu definieren.
+				var cubeGeo = new THREE.BoxGeometry(UNITWIDTH, UNITHEIGHT*map[i][j], UNITWIDTH);
+				//Würfelmaterial erstellen
+				var cubeMat = new THREE.MeshPhongMaterial({
+					color: 0x81cfe0,
+				});
+				
 				//Erzeuge den Würfel
 				var cube = new THREE.Mesh(cubeGeo, cubeMat);
 				//Würfelposition setzen
@@ -112,10 +120,12 @@ function createMazeCubes() {
 				//Kollisionerkennung
 				collidableObjects.push(cube);
 			}
+			
+			
 		}
 	}
 	//
-	mapSize = totalCubesWide * UNITWIDTH
+	mapSize = totalCubesWide * UNITWIDTH //Variable "mapSize" wurde oben als globale Variable gespeichert
 		
 }
 
@@ -123,8 +133,6 @@ function createMazeCubes() {
 //Grundebene erstellen
 
 //Durch Berechnung der Map Größe, kann die Grundebene die entsprechende Größe bekommen
-var mapSize;
-
 
 //Grundebene 
 function createGround() {
@@ -140,7 +148,7 @@ function createGround() {
 }
 
 
-//Boundingbox erstellen
+//Boundingbox bzw. Mapbox erstellen
 function createPerimWalls() {
 	var halfMap = mapSize / 2; //Halb so groß wie die Map
 	var sign = 1; //wird benötigt um eine Menge positiv oder negativ zu machen
@@ -155,13 +163,13 @@ function createPerimWalls() {
 		var perimWallFB = new THREE.Mesh(perimGeo, perimMat);
 		
 		//Linke und rechte Wände erstellen
-		perimWallLR.position.set(halfMap * sign, UNITHEIGHT / 2, 0);
-		perimWallLR.rotation.y = degreesToRadians(90);
+		perimWallLR.position.set(halfMap * sign, UNITHEIGHT / 2, 0); //Wand wir in der Mitte der Map erstellt. Sie muss nun mit "halfMap*sign" um die halbe Map auf die Seite (zuerst nach links, dann nach rechts (sign wird -1)) versetzt.
+		perimWallLR.rotation.y = degreesToRadians(90); //Rotation um 90° ist notwendig, damit die Ebene nicht im Raum liegt, sondern steht.
 		scene.add(perimWallLR);
 		//Kollisionserkennung
 		collidableObjects.push(perimWallLR);
 		//Vorder- und Rückwand erstellen
-		perimWallFB.position.set(0, UNITHEIGHT / 2, halfMap * sign);
+		perimWallFB.position.set(0, UNITHEIGHT / 2, halfMap * sign); //Vorder- und Rückwand muss nicht seitlich verschoben werden, aber um die halbe Map nach vorne und nach hinten, deswegen ist der dritte Ausdruck "halfMap*sign".
 		scene.add(perimWallFB);
 		
 		//Kollisionerkennung
