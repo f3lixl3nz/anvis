@@ -14,37 +14,38 @@ var mapSize; //zur Berechnung der Grundebene
 var camera, controls, scene, renderer;
 
 
-// Flags to determine which direction the player is moving
+//Bestimmung der Bewegungsrichtung des Spielers
 var moveForward = false;
 var moveBackward = false;
 var moveLeft = false;
 var moveRight = false;
 
-// Velocity vector for the player
+//Geschwindigkeitsvektor für den Spieler
 var playerVelocity = new THREE.Vector3();
 
-// How fast the player will move
+//Wie schnell sich der Spieler bewegt
 var PLAYERSPEED = 800.0;
 
 var clock;
 
+//Kollisionabstand
 var PLAYERCOLLISIONDISTANCE = 20;
 
 //PointerLockControls
-// Flag to determine if the player can move and look around
+//Festzustellen, ob sich der Spieler bewegen und sich umsehen kann
 var controlsEnabled = false;
 
-// HTML elements to be changed
+//Zu ändernde HTML-Elemente
 var blocker = document.getElementById('blocker');
 
-// Get the pointer lock state
+//Zustand des pointer lock abfragen
 getPointerLock();
-// Set up the game
+//Das Spiel einrichten
 init();
-// Start animating the scene
+//Beginnt die Szene zu animieren
 animate();
 
-// Get the pointer lock and start listening for if its state changes
+//Startet pointer lock und hört auf soblad sich der Status ändert
 function getPointerLock() {
   document.onclick = function () {
     container.requestPointerLock();
@@ -52,7 +53,7 @@ function getPointerLock() {
   document.addEventListener('pointerlockchange', lockChange, false); 
 }
 
-// Switch the controls on or off
+//Ein- und Ausschalten der Bedienelemente
 function lockChange() {
     // Turn on controls
     if (document.pointerLockElement === container) {
@@ -241,10 +242,9 @@ function createPerimWalls() {
 
 
 //Bewegungssteuerung
-// Add event listeners for player movement key presses
+//Hinzufügen von event listeners für Tasteneingaben die eine Spielerbewegung ausführen
 function listenForPlayerMovement() {
-  // Listen for when a key is pressed
-  // If it's a specified key, mark the direction as true since moving
+  //Wenn es sich um eine bestimmte Taste handelt, wird die Richtung als "ture" makiert. Spieler bewegt sich
   var onKeyDown = function(event) {
 
     switch (event.keyCode) {
@@ -273,8 +273,8 @@ function listenForPlayerMovement() {
 
   };
 
-  // Listen for when a key is released
-  // If it's a specified key, mark the direction as false since no longer moving
+  // Listen for when wenn eine Taste losgelassen wird
+  //Wenn es sich um eine bestimmte Taste handelt, wird die Richtung als "false" makiert. Spieler stopt
   var onKeyUp = function(event) {
 
     switch (event.keyCode) {
@@ -301,23 +301,22 @@ function listenForPlayerMovement() {
     }
   };
 
-  // Add event listeners for when movement keys are pressed and released
+  //Hinzufügen eines event listeners wenn Bewegungstasten gedrückt und losgelassen werden
   document.addEventListener('keydown', onKeyDown, false);
   document.addEventListener('keyup', onKeyUp, false);
 }
 
 
 //Kollisionerkennung
-//  Determine if the player is colliding with a collidable object
+//Feststellen, ob der Spieler mit einem kollidierbaren Objekt kollidiert.
 function detectPlayerCollision() {
-    // The rotation matrix to apply to our direction vector
-    // Undefined by default to indicate ray should coming from front
+    // Rotationsmatrix für Richtungsvektor - Standardmäßig nicht definiert, um anzuzeigen, dass der Strahl von vorne kommen sollte.
     var rotationMatrix;
-    // Get direction of camera
+    //Kamerarichtung bestimmen
     var cameraDirection = controls.getDirection(new THREE.Vector3(0, 0, 0)).clone();
 
-    // Check which direction we're moving (not looking)
-    // Flip matrix to that direction so that we can reposition the ray
+    //Überprüft ich welche Richtung der Spieler sich bewegt
+    //Dreht die Matrix so das die Richtung des Strahls neu positioniert werden kann.
     if (moveBackward) {
         rotationMatrix = new THREE.Matrix4();
         rotationMatrix.makeRotationY(degreesToRadians(180));
@@ -331,15 +330,15 @@ function detectPlayerCollision() {
         rotationMatrix.makeRotationY(degreesToRadians(270));
     }
 
-    // Player is moving forward, no rotation matrix needed
+    //Wenn der Spieler sich vorwärts bewegt muss keine Drehung der Matrix erfolgen
     if (rotationMatrix !== undefined) {
         cameraDirection.applyMatrix4(rotationMatrix);
     }
 
-    // Apply ray to player camera
+    //Strahl auf Player-Kamera anwenden
     var rayCaster = new THREE.Raycaster(controls.getObject().position, cameraDirection);
 
-    // If our ray hit a collidable object, return true
+    //Wenn Strahl auf ein kollidierbares Objekt trifft, return true
     if (rayIntersect(rayCaster, PLAYERCOLLISIONDISTANCE)) {
         return true;
     } else {
@@ -348,8 +347,8 @@ function detectPlayerCollision() {
 }
 
 
-// Takes a ray and sees if it's colliding with anything from the list of collidable objects
-// Returns true if certain distance away from object
+// Nimmt einen Strahl und erkennt, ob er mit etwas aus derListe der kollidierbaren Objekte kollidiert.
+// Returns "true" wenn ein gewisser Abstand zum Objekt besteht
 function rayIntersect(ray, distance) {
     var intersects = ray.intersectObjects(collidableObjects);
     for (var i = 0; i < intersects.length; i++) {
