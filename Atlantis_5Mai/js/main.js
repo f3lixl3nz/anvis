@@ -273,7 +273,7 @@ function listenForPlayerMovement() {
 
   };
 
-  // Listen for when wenn eine Taste losgelassen wird
+  //Listen for when wenn eine Taste losgelassen wird
   //Wenn es sich um eine bestimmte Taste handelt, wird die Richtung als "false" makiert. Spieler stopt
   var onKeyUp = function(event) {
 
@@ -347,8 +347,8 @@ function detectPlayerCollision() {
 }
 
 
-// Nimmt einen Strahl und erkennt, ob er mit etwas aus derListe der kollidierbaren Objekte kollidiert.
-// Returns "true" wenn ein gewisser Abstand zum Objekt besteht
+//Nimmt einen Strahl und erkennt, ob er mit etwas aus derListe der kollidierbaren Objekte kollidiert.
+//Returns "true" wenn ein gewisser Abstand zum Objekt besteht
 function rayIntersect(ray, distance) {
     var intersects = ray.intersectObjects(collidableObjects);
     for (var i = 0; i < intersects.length; i++) {
@@ -392,18 +392,18 @@ function onWindowResize() {
 function animate() {
   render();
   requestAnimationFrame(animate);
-  // Get the change in time between frames
+  //Erkennung der Zeitänderung zwischen den Frames
   var delta = clock.getDelta();
   animatePlayer(delta);
 }
 
-// Animate the player camera
+//Animation der Spielerkamera
 function animatePlayer(delta) {
-    // Gradual slowdown
+    //Verlangsamung
     playerVelocity.x -= playerVelocity.x * 10.0 * delta;
     playerVelocity.z -= playerVelocity.z * 10.0 * delta;
 
-    // If no collision and a movement key is being pressed, apply movement velocity
+    //Wenn keine Kollision stattfindet und eine Bewegungstaste gedrückt wird, wird die Bewegungsgeschwindigkeit angewendet.
     if (detectPlayerCollision() == false) {
         if (moveForward) {
             playerVelocity.z -= PLAYERSPEED * delta;
@@ -421,7 +421,7 @@ function animatePlayer(delta) {
         controls.getObject().translateX(playerVelocity.x * delta);
         controls.getObject().translateZ(playerVelocity.z * delta);
     } else {
-        // Collision or no movement key being pressed. Stop movememnt
+        //WEnn Kollision oder keine Bewegungstaste wird gedrückt - Bewegung anhalten
         playerVelocity.x = 0;
         playerVelocity.z = 0;
     }
