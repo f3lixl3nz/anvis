@@ -11,8 +11,15 @@ var totalCubesWide; //Variable speichert, wie viele Würfelweit die maze sein wi
 var collidableObjects = []; // Variable speichert eine Array der kollidierten Objekte
 var mapSize; //zur Berechnung der Grundebene
 
-var camera, controls, scene, renderer;
+var camera; 
+var renderer;
+var scene;
 
+var clock;
+var controls; 
+var PLAYERSPEED = 800.0;//Wie schnell sich der Spieler bewegt
+var playerVelocity = new THREE.Vector3();//Geschwindigkeitsvektor für den Spieler
+var PLAYERCOLLISIONDISTANCE = 20;//Kollisionabstand
 
 //Bestimmung der Bewegungsrichtung des Spielers
 var moveForward = false;
@@ -20,16 +27,6 @@ var moveBackward = false;
 var moveLeft = false;
 var moveRight = false;
 
-//Geschwindigkeitsvektor für den Spieler
-var playerVelocity = new THREE.Vector3();
-
-//Wie schnell sich der Spieler bewegt
-var PLAYERSPEED = 800.0;
-
-var clock;
-
-//Kollisionabstand
-var PLAYERCOLLISIONDISTANCE = 20;
 
 //Maussteuerung
 //PointerLockControls
@@ -192,11 +189,8 @@ function createMazeCubes() {
 }
 
 
-//Grundebene erstellen
-
-//Durch Berechnung der Map Größe, kann die Grundebene die entsprechende Größe bekommen
-
 //Grundebene 
+//Durch Berechnung der Map Größe, kann die Grundebene die entsprechende Größe bekommen
 function createGround() {
 	//Grundebenengeometrie und  -material erstellen
 	var groundGeo = new THREE.PlaneGeometry(mapSize, mapSize);
@@ -210,7 +204,7 @@ function createGround() {
 }
 
 
-//Boundingbox bzw. Mapbox erstellen
+//Boundingbox bzw. Mapbox 
 function createPerimWalls() {
 	var halfMap = mapSize / 2; //Halb so groß wie die Map
 	var sign = 1; //wird benötigt um eine Menge positiv oder negativ zu machen
@@ -362,7 +356,7 @@ function rayIntersect(ray, distance) {
 }
 
 
-//Lichtquellen definieren
+//Lichtquellen
 function addLights() {
 	//1. Licht hinzufügen
 	var lightOne = new THREE.DirectionalLight(0xffffff);
