@@ -31,19 +31,13 @@ var clock;
 //Kollisionabstand
 var PLAYERCOLLISIONDISTANCE = 20;
 
+//Maussteuerung
 //PointerLockControls
-//Festzustellen, ob sich der Spieler bewegen und sich umsehen kann
+//Festzustellen, ob sich der Spieler bewegt und sich umsehen kann
 var controlsEnabled = false;
 
 //Zu ändernde HTML-Elemente
 var blocker = document.getElementById('blocker');
-
-//Zustand des pointer lock abfragen
-getPointerLock();
-//Das Spiel einrichten
-init();
-//Beginnt die Szene zu animieren
-animate();
 
 //Startet pointer lock und hört auf soblad sich der Status ändert
 function getPointerLock() {
@@ -55,19 +49,26 @@ function getPointerLock() {
 
 //Ein- und Ausschalten der Bedienelemente
 function lockChange() {
-    // Turn on controls
+    //Einschalten
     if (document.pointerLockElement === container) {
         blocker.style.display = "none";
         controls.enabled = true;
         controlsEnabled = true;
-    // Turn off the controls
+    //Ausschalten
     } else {
-      // Display the blocker and instruction
+      //Anweisungen und Blocker anzeigen
         blocker.style.display = "";
         controls.enabled = false;
         controlsEnabled = false;
     }
 }
+
+//Zustand des Pointerlock abfragen
+getPointerLock();
+//Das Spiel einrichten
+init();
+//Beginnt die Szene zu animieren
+animate();
 
 
 //Hauptfunktion
