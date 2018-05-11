@@ -159,7 +159,7 @@ function createMazeCubes() {
 		//2. for-Schleife definiert das j, um die Spalte in der jeweiligen Zeile auszuwählen
 		for (var j = 0; j < map[i].length; j++) {
 			//3. for-Schleife sagt, ob ein Würfel gebaut wird oder nicht un in welcher Größe abhängig des Wertes in der Matrix
-			for (var k = map[i][j]; k > 0; k = 0) {
+			if (map[i][j] > 0) {
 				
 				//Würfelgeometrie erstellen mit den globalen Variablen UNITHEIGHT und UNITWIDTH, wobei die Höhe UNITHEIGHT mit der Zahl in der Matrix multipliziert wird, um die Höhe zu definieren.
 				var cubeGeo = new THREE.BoxGeometry(UNITWIDTH, UNITHEIGHT*map[i][j], UNITWIDTH);
