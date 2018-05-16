@@ -1,10 +1,10 @@
-var UNITWIDTH = 40;  //Breite eines Würfels in der maz
+			var UNITWIDTH = 40;  //Breite eines Würfels in der maz
 			var UNITHEIGHT = 40; //Höhe eines Würfels in der maze
 			var totalBoxWide; //Variable speichert, wie viele Würfelweit die maze sein wird
 			var objects = []; // Variable speichert eine Array der kollidierten Objekte
 			var mapSize; //zur Berechnung der Grundebene
 			
-			var camera, scene, renderer, controls;
+			var camera, scene, renderer, light, controls;
 			
 			var clock;
 			
@@ -90,20 +90,55 @@ var UNITWIDTH = 40;  //Breite eines Würfels in der maz
 			init();
 			animate();
 
+			
 			function init() {
+				// renderer
+				renderer = new THREE.WebGLRenderer( { antialias: true } );
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				document.body.appendChild( renderer.domElement );
 
+				
+				// windowresize
+				window.addEventListener( 'resize', onWindowResize, false );
+				
+				function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				}
+				
+				
+				// camera
 				camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1000 );
 
-				scene = new THREE.Scene();
-				scene.background = new THREE.Color( 0xffffff );
-				scene.fog = new THREE.Fog( 0xffffff, 0, 750 );
-
-				var light = new THREE.HemisphereLight( 0xeeeeff, 0x777788, 0.75 );
-				light.position.set( 0.5, 1, 0.75 );
-				scene.add( light );
 				
+				//
 				clock = new THREE.Clock();
 				
+				
+				//
+				scene = new THREE.Scene();
+				
+				
+				// light
+				light =  new THREE.HemisphereLight( 0xffffff, 0.6 );
+				scene.add( light );
+				
+				var light2 = new THREE.DirectionalLight( 0xaabbff, 0.5 );
+				light2.position.set(1, -1, -1);
+				scene.add( light2 );
+				
+				var light3 = new THREE.DirectionalLight( 0xaabbff, 0.5 );
+				light3.position.set(1, 1, 1);
+				scene.add( light3 );
+				
+				
+				// controls
+				// https://threejs.org/examples/misc_controls_pointerlock.html
 				controls = new THREE.PointerLockControls( camera );
 				scene.add( controls.getObject() );
 
@@ -171,9 +206,14 @@ var UNITWIDTH = 40;  //Breite eines Würfels in der maz
 				document.addEventListener( 'keyup', onKeyUp, false );
 
 				raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, 10 );
+				
+				}
 
-				// floor
-				var waterGeometry = new THREE.PlaneBufferGeometry(10000, 10000);
+				
+				// floor - water
+				// https://github.com/mrdoob/three.js/blob/master/examples/webgl_shaders_ocean.html
+				var waterGeometry = new THREE.PlaneBufferGeometry( 10000, 10000 );
+				
 				water = new THREE.Water(
 					waterGeometry,
 					{
@@ -195,16 +235,60 @@ var UNITWIDTH = 40;  //Breite eines Würfels in der maz
 				
 				scene.add( water );
 				
+				// animation fehlt! anleitung: https://github.com/mrdoob/three.js/blob/master/examples/webgl_shaders_ocean.html
+				
+				
+				// skybox
+				// https://threejs.org/examples/?q=sky#webgl_shaders_sky
+				var sky = new THREE.Sky();
+				sky.scale.setScalar( 10000 );
+				scene.add( sky );
+				
+				var uniforms = sky.material.uniforms;
+				
+				uniforms.turbidity.value = 10;
+				uniforms.rayleigh.value = 2;
+				uniforms.luminance.value = 1;
+				uniforms.mieCoefficient.value = 0.005;
+				uniforms.mieDirectionalG.value = 0.8;
+				
+				var parameters = {
+					distance: 400,
+					inclination: 0.3, //0.485 --> abenddämmerung
+					azimuth: 0.205
+				};
+				
+				var cubeCamera = new THREE.CubeCamera( 1, 20000, 256 );
+				cubeCamera.renderTarget.texture.minFilter = THREE.LinearMipMapLinearFilter;
+				
+				function updateSun() {
+					
+					var theta = Math.PI * ( parameters.inclination - 0.5 );
+					var phi = 2 * Math.PI * ( parameters.azimuth - 0.5 );
+					
+					light.position.x = parameters.distance * Math.cos( phi );
+					light.position.y = parameters.distance * Math.sin( phi ) * Math.sin( theta );
+					light.position.z = parameters.distance * Math.sin( phi ) * Math.cos( theta );
+					
+					sky.material.uniforms.sunPosition.value = light.position.copy( light.position );
+					
+					water.material.uniforms.sunDirection.value.copy( light.position ).normalize();
+					
+					cubeCamera.update( renderer, scene );
+				}
+				
+				updateSun();
+			
 			
 				// objects
 				function createBoxLayout() {
 					var map = [ 
-					[0, 0, 0, 0, 0, 0, ], 
-					[0, 2, 2, 0, 3, 0, ],
-					[0, 2, 0, 0, 1, 0, ],
-					[0, 1, 0, 0, 1, 0, ],
-					[0, 1, 1, 1, 3, 0, ],
-					[0, 0, 0, 0, 0, 0, ]
+					[1, 1, 1, 1, 1, 1, ], 
+					[1, 14, 13, 6, 5, 1, ],
+					[1, 15, 12, 7, 4, 1, ],
+					[1, 16, 11, 8, 3, 1, ],
+					[1, 17, 10, 9, 2, 1, ],
+					[1, 1, 1, 1, 1, 1, ]
 					];
 				
 					var widthOffset = UNITWIDTH / 2;
@@ -216,8 +300,8 @@ var UNITWIDTH = 40;  //Breite eines Würfels in der maz
 						for (var j = 0; j < map[i].length; j++) {
 							for (var k = map[i][j]; k > 0; k = 0) {
 								var boxGeometry = new THREE.BoxGeometry(UNITWIDTH, UNITHEIGHT*map[i][j], UNITWIDTH);
-								var boxMaterial = new THREE.MeshStandardMaterial({
-
+								var boxMaterial = new THREE.MeshPhongMaterial({
+								color: 0xEED6AF,
 								});
 								
 								var box = new THREE.Mesh(boxGeometry, boxMaterial);
@@ -235,31 +319,10 @@ var UNITWIDTH = 40;  //Breite eines Würfels in der maz
 				}
 				
 				createBoxLayout();
+
 				
-
-
-				//
-
-				renderer = new THREE.WebGLRenderer( { antialias: true } );
-				renderer.setPixelRatio( window.devicePixelRatio );
-				renderer.setSize( window.innerWidth, window.innerHeight );
-				document.body.appendChild( renderer.domElement );
-
-				//
-
-				window.addEventListener( 'resize', onWindowResize, false );
-
-			}
-
-			function onWindowResize() {
-
-				camera.aspect = window.innerWidth / window.innerHeight;
-				camera.updateProjectionMatrix();
-
-				renderer.setSize( window.innerWidth, window.innerHeight );
-
-			}
-
+			// animation
+			// https://threejs.org/examples/misc_controls_pointerlock.html
 			function animate() {
 
 				requestAnimationFrame( animate );
@@ -312,6 +375,7 @@ var UNITWIDTH = 40;  //Breite eines Würfels in der maz
 
 				}
 
+				
 				renderer.render( scene, camera );
-
-			}
+				
+			}	
