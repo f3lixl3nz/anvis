@@ -1,13 +1,19 @@
-var camera, scene, renderer, controls;
-
-			var objects = [];
+var UNITWIDTH = 40;  //Breite eines Würfels in der maz
+			var UNITHEIGHT = 40; //Höhe eines Würfels in der maze
+			var totalBoxWide; //Variable speichert, wie viele Würfelweit die maze sein wird
+			var objects = []; // Variable speichert eine Array der kollidierten Objekte
+			var mapSize; //zur Berechnung der Grundebene
+			
+			var camera, scene, renderer, controls;
+			
+			var clock;
+			
+			var water;
 
 			var raycaster;
 
 			var blocker = document.getElementById( 'blocker' );
 			var instructions = document.getElementById( 'instructions' );
-
-			// http://www.html5rocks.com/en/tutorials/pointerlock/intro/
 
 			var havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
 
@@ -95,7 +101,9 @@ var camera, scene, renderer, controls;
 				var light = new THREE.HemisphereLight( 0xeeeeff, 0x777788, 0.75 );
 				light.position.set( 0.5, 1, 0.75 );
 				scene.add( light );
-
+				
+				clock = new THREE.Clock();
+				
 				controls = new THREE.PointerLockControls( camera );
 				scene.add( controls.getObject() );
 
@@ -165,76 +173,70 @@ var camera, scene, renderer, controls;
 				raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, 10 );
 
 				// floor
-
-				var floorGeometry = new THREE.PlaneBufferGeometry( 2000, 2000, 100, 100 );
-				floorGeometry.rotateX( - Math.PI / 2 );
-
-				// vertex displacement
-
-				var position = floorGeometry.attributes.position;
-
-				for ( var i = 0; i < position.count; i ++ ) {
-
-					vertex.fromBufferAttribute( position, i );
-
-					vertex.x += Math.random() * 20 - 10;
-					vertex.y += Math.random() * 2;
-					vertex.z += Math.random() * 20 - 10;
-
-					position.setXYZ( i, vertex.x, vertex.y, vertex.z );
-
-				}
-
-				floorGeometry = floorGeometry.toNonIndexed(); // ensure each face has unique vertices
-
-				count = floorGeometry.attributes.position.count;
-				var colors = [];
-
-				for ( var i = 0; i < count; i ++ ) {
-
-					color.setHSL( Math.random() * 0.3 + 0.5, 0.75, Math.random() * 0.25 + 0.75 );
-					colors.push( color.r, color.g, color.b );
-
-				}
-
-				floorGeometry.addAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
-
-				var floorMaterial = new THREE.MeshBasicMaterial( { vertexColors: THREE.VertexColors } );
-
-				var floor = new THREE.Mesh( floorGeometry, floorMaterial );
-				scene.add( floor );
-
+				var waterGeometry = new THREE.PlaneBufferGeometry(10000, 10000);
+				water = new THREE.Water(
+					waterGeometry,
+					{
+						textureWidth: 512,
+						textureHeight: 512,
+						waterNormals: new THREE.TextureLoader().load( 'js/textures/waternormals.jpg', function ( texture ) {
+							texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+						}),
+						alpha: 1.0,
+						sunDirection: light.position.clone().normalize(),
+						sunColor: 0xffffff,
+						waterColor: 0x001e0f,
+						distortionScale:  3.7,
+						fog: scene.fog !== undefined
+					}
+				);
+				
+				water.rotation.x = - Math.PI / 2;
+				
+				scene.add( water );
+				
+			
 				// objects
+				function createBoxLayout() {
+					var map = [ 
+					[0, 0, 0, 0, 0, 0, ], 
+					[0, 2, 2, 0, 3, 0, ],
+					[0, 2, 0, 0, 1, 0, ],
+					[0, 1, 0, 0, 1, 0, ],
+					[0, 1, 1, 1, 3, 0, ],
+					[0, 0, 0, 0, 0, 0, ]
+					];
+				
+					var widthOffset = UNITWIDTH / 2;
+				
+					var heightOffset = UNITHEIGHT / 2;
+					
+					totalBoxWide = map[0].length;
+					for (var i = 0; i < totalBoxWide; i++) {
+						for (var j = 0; j < map[i].length; j++) {
+							for (var k = map[i][j]; k > 0; k = 0) {
+								var boxGeometry = new THREE.BoxGeometry(UNITWIDTH, UNITHEIGHT*map[i][j], UNITWIDTH);
+								var boxMaterial = new THREE.MeshStandardMaterial({
 
-				var boxGeometry = new THREE.BoxBufferGeometry( 20, 20, 20 );
-				boxGeometry = boxGeometry.toNonIndexed(); // ensure each face has unique vertices
-
-				count = boxGeometry.attributes.position.count;
-				colors = [];
-
-				for ( var i = 0; i < count; i ++ ) {
-
-					color.setHSL( Math.random() * 0.3 + 0.5, 0.75, Math.random() * 0.25 + 0.75 );
-					colors.push( color.r, color.g, color.b );
-
+								});
+								
+								var box = new THREE.Mesh(boxGeometry, boxMaterial);
+								
+								box.position.z = (i - totalBoxWide / 2) * UNITWIDTH + widthOffset;
+								box.position.y = heightOffset;
+								box.position.x = (j - totalBoxWide / 2) * UNITWIDTH + widthOffset;
+								
+								scene.add(box);
+								objects.push(box);
+							}
+						}
+					}
+					//mapSize = totalBoxWide * UNITWIDTH
 				}
+				
+				createBoxLayout();
+				
 
-				boxGeometry.addAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
-
-				for ( var i = 0; i < 500; i ++ ) {
-
-					var boxMaterial = new THREE.MeshPhongMaterial( { specular: 0xffffff, flatShading: true, vertexColors: THREE.VertexColors } );
-					boxMaterial.color.setHSL( Math.random() * 0.2 + 0.5, 0.75, Math.random() * 0.25 + 0.75 );
-
-					var box = new THREE.Mesh( boxGeometry, boxMaterial );
-					box.position.x = Math.floor( Math.random() * 20 - 10 ) * 20;
-					box.position.y = Math.floor( Math.random() * 20 ) * 20 + 10;
-					box.position.z = Math.floor( Math.random() * 20 - 10 ) * 20;
-
-					scene.add( box );
-					objects.push( box );
-
-				}
 
 				//
 
@@ -283,8 +285,8 @@ var camera, scene, renderer, controls;
 					direction.x = Number( moveLeft ) - Number( moveRight );
 					direction.normalize(); // this ensures consistent movements in all directions
 
-					if ( moveForward || moveBackward ) velocity.z -= direction.z * 400.0 * delta;
-					if ( moveLeft || moveRight ) velocity.x -= direction.x * 400.0 * delta;
+					if ( moveForward || moveBackward ) velocity.z -= direction.z * 800.0 * delta;
+					if ( moveLeft || moveRight ) velocity.x -= direction.x * 800.0 * delta;
 
 					if ( onObject === true ) {
 
@@ -305,7 +307,7 @@ var camera, scene, renderer, controls;
 						canJump = true;
 
 					}
-
+					
 					prevTime = time;
 
 				}
