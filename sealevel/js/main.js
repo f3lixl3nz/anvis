@@ -11,7 +11,10 @@
 			var water;
 
 			var raycaster;
+			
+			var PLAYERCOLLISIONDISTANCE = 20;
 
+			
 			var blocker = document.getElementById( 'blocker' );
 			var instructions = document.getElementById( 'instructions' );
 
@@ -73,6 +76,7 @@
 
 			}
 
+			
 			var controlsEnabled = false;
 
 			var moveForward = false;
@@ -84,8 +88,7 @@
 			var prevTime = performance.now();
 			var velocity = new THREE.Vector3();
 			var direction = new THREE.Vector3();
-			var vertex = new THREE.Vector3();
-			var color = new THREE.Color();
+
 
 			init();
 			animate();
@@ -212,11 +215,10 @@
 				
 				// floor - water
 				// https://github.com/mrdoob/three.js/blob/master/examples/webgl_shaders_ocean.html
+				// https://github.com/jbouny/ocean/wiki/How-to-use-%3F
 				var waterGeometry = new THREE.PlaneBufferGeometry( 10000, 10000 );
 				
-				water = new THREE.Water(
-					waterGeometry,
-					{
+				water = new THREE.Water(waterGeometry,{
 						textureWidth: 512,
 						textureHeight: 512,
 						waterNormals: new THREE.TextureLoader().load( 'js/textures/waternormals.jpg', function ( texture ) {
@@ -254,7 +256,7 @@
 				
 				var parameters = {
 					distance: 400,
-					inclination: 0.3, //0.485 --> abenddämmerung
+					inclination: 0.3 , //0.485 --> abenddämmerung
 					azimuth: 0.205
 				};
 				
@@ -283,12 +285,12 @@
 				// objects
 				function createBoxLayout() {
 					var map = [ 
-					[1, 1, 1, 1, 1, 1, ], 
-					[1, 14, 13, 6, 5, 1, ],
-					[1, 15, 12, 7, 4, 1, ],
-					[1, 16, 11, 8, 3, 1, ],
-					[1, 17, 10, 9, 2, 1, ],
-					[1, 1, 1, 1, 1, 1, ]
+					[1, 2, 1, 1, 2, 1, ], 
+					[2, 1, 2, 3, 4, 2, ],
+					[2, 1, 2, 3, 5, 1, ],
+					[3, 1, 11, 12, 6, 5, ],
+					[2, 1, 10, 13, 7, 2, ],
+					[1, 2, 9, 8, 2, 1, ]
 					];
 				
 					var widthOffset = UNITWIDTH / 2;
@@ -298,7 +300,6 @@
 					totalBoxWide = map[0].length;
 					for (var i = 0; i < totalBoxWide; i++) {
 						for (var j = 0; j < map[i].length; j++) {
-							for (var k = map[i][j]; k > 0; k = 0) {
 								var boxGeometry = new THREE.BoxGeometry(UNITWIDTH, UNITHEIGHT*map[i][j], UNITWIDTH);
 								var boxMaterial = new THREE.MeshPhongMaterial({
 								color: 0xEED6AF,
@@ -312,10 +313,11 @@
 								
 								scene.add(box);
 								objects.push(box);
-							}
+							
 						}
+					
 					}
-					//mapSize = totalBoxWide * UNITWIDTH
+
 				}
 				
 				createBoxLayout();
@@ -368,14 +370,87 @@
 						controls.getObject().position.y = 10;
 
 						canJump = true;
-
+						
+					}
+					
+					
+					if(water) {
+						
+						water.material.uniforms.time.value += delta;
+					
 					}
 					
 					prevTime = time;
 
 				}
-
 				
 				renderer.render( scene, camera );
 				
-			}		
+			}	
+
+			
+			//collision
+			function detectPlayerCollision() {
+				var rotationMatrix;
+    
+				var cameraDirection = controls.getDirection(new THREE.Vector3(0, 0, 0)).clone();
+				
+				if (moveBackward) {
+					rotationMatrix = new THREE.Matrix4();
+					rotationMatrix.makeRotationY(degreesToRadians(180));
+					rotationMatrix.makeRotationY(degreesToRadians(180));
+				}
+				else if (moveLeft) {
+					rotationMatrix = new THREE.Matrix4();
+					rotationMatrix.makeRotationY(degreesToRadians(90));
+				}
+				else if (moveRight) {
+					rotationMatrix = new THREE.Matrix4();
+					rotationMatrix.makeRotationY(degreesToRadians(270));
+				}
+    
+				if (rotationMatrix !== undefined) {
+					cameraDirection.applyMatrix4(rotationMatrix);
+				}
+
+				var raycasterCollision = new THREE.Raycaster(controls.getObject().position, cameraDirection);
+
+				if (rayIntersect(raycasterCollision, PLAYERCOLLISIONDISTANCE)) {
+					return true;
+				} else {
+					return false;
+				}
+			}
+			
+			
+			function rayIntersect(ray, distance) {
+				var intersects = ray.intersectObjects(objects);
+				for (var i = 0; i < intersects.length; i++) {
+      
+				if (intersects[i].distance < distance) {
+					return true;
+					}
+				}
+				return false;
+			}
+			
+			
+			// sound
+			// https://threejs.org/docs/#api/audio/Audio
+				// create an AudioListener and add it to the camera
+				var listener = new THREE.AudioListener();
+				camera.add( listener );
+
+				// create a global audio source
+				var sound = new THREE.Audio( listener );
+
+				// load a sound and set it as the Audio object's buffer
+				var audioLoader = new THREE.AudioLoader();
+					audioLoader.load( 'js/sound/ocean.ogg', function( buffer ) {
+					sound.setBuffer( buffer );
+					sound.setLoop( true );
+					sound.setVolume( 1 );
+					sound.play();
+				});
+			
+				water.add( sound );
