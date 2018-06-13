@@ -1,4 +1,4 @@
-						var UNITWIDTH = 40;  //Breite eines Würfels in der maz
+			var UNITWIDTH = 40;  //Breite eines Würfels in der maz
 			var UNITHEIGHT = 40; //Höhe eines Würfels in der maze
 			var totalBoxWide; //Variable speichert, wie viele Würfelweit die maze sein wird
 			var objects = []; // Variable speichert eine Array der kollidierten Objekte
@@ -388,7 +388,7 @@
 
 				if ( controlsEnabled === true ) {
 
-					raycaster.ray.origin.copy( controls..getObject().position );
+					raycaster.ray.origin.copy( controls.getObject().position );
 					raycaster.ray.origin.y -= 10;
 
 					var intersections = raycaster.intersectObjects( objects );
@@ -434,11 +434,80 @@
 						
 						water.material.uniforms.time.value += delta;
 					
-					}				
+					}
+					
 					prevTime = time;
-				}	
-				renderer.render( scene, camera );			
-			}		
+
+				}
+				
+				renderer.render( scene, camera );
+				
+			}	
+
+			
+			//collision
+			function rayIntersect(ray, distance) {
+				var intersects = ray.intersectObjects(objects);
+	
+				if ( controlsEnabled === true ) {
+					var onObject = intersects.length > 0;
+				}
+	
+				for (var i = 0; i < intersects.length; i++) {
+				// Check if there's a collision
+					if (intersects[i].distance < distance) {
+						return true;
+					}
+				}
+				return false;
+			}
+			
+	
+			function detectPlayerCollision() {
+				
+				var rotationMatrix;
+    
+				var cameraDirection = controls.getDirection(new THREE.Vector3(0, 0, 0)).clone();
+				
+				if (moveBackward) {
+					rotationMatrix = new THREE.Matrix4();
+					rotationMatrix.makeRotationY(degreesToRadians(180));
+					rotationMatrix.makeRotationY(degreesToRadians(180));
+				}
+				else if (moveLeft) {
+					rotationMatrix = new THREE.Matrix4();
+					rotationMatrix.makeRotationY(degreesToRadians(90));
+				}
+				else if (moveRight) {
+					rotationMatrix = new THREE.Matrix4();
+					rotationMatrix.makeRotationY(degreesToRadians(270));
+				}
+    
+				if (rotationMatrix !== undefined) {
+					cameraDirection.applyMatrix4(rotationMatrix);
+				}
+
+				var raycasterCollision = new THREE.Raycaster(controls.getObject().position, cameraDirection);
+
+				if (rayIntersect(raycasterCollision, PLAYERCOLLISIONDISTANCE)) {
+					return true;
+				} else {
+					return false;
+				}
+			}
+			
+			
+			//Umrechnung Grad in Radiant
+			function degreesToRadians(degrees) {
+				return degrees * Math.PI / 180;
+			}
+
+
+			//Umrechnung Radiant in Grad
+			function radiansToDegrees(radians) {
+				return radians * 180 / Math.PI;
+			}
+			
 			
 			// sound
 			// https://threejs.org/docs/#api/audio/Audio
@@ -459,3 +528,8 @@
 				});
 				
 				water.add( sound );
+	
+				
+				
+				
+	
