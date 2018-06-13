@@ -1,4 +1,4 @@
-			var UNITWIDTH = 40;  //Breite eines Würfels in der maz
+						var UNITWIDTH = 40;  //Breite eines Würfels in der maz
 			var UNITHEIGHT = 40; //Höhe eines Würfels in der maze
 			var totalBoxWide; //Variable speichert, wie viele Würfelweit die maze sein wird
 			var objects = []; // Variable speichert eine Array der kollidierten Objekte
@@ -213,10 +213,11 @@
 				}
 
 				
-				// floor - water
+				// water
 				// https://github.com/mrdoob/three.js/blob/master/examples/webgl_shaders_ocean.html
 				// https://github.com/jbouny/ocean/wiki/How-to-use-%3F
 				var waterGeometry = new THREE.PlaneBufferGeometry( 10000, 10000 );
+				scene.fog = new THREE.FogExp2(0xcccccc, 0.001);
 				
 				water = new THREE.Water(waterGeometry,{
 						textureWidth: 512,
@@ -234,10 +235,9 @@
 				);
 				
 				water.rotation.x = - Math.PI / 2;
+				//water.position.set (1,20,4);
 				
 				scene.add( water );
-				
-				// animation fehlt! anleitung: https://github.com/mrdoob/three.js/blob/master/examples/webgl_shaders_ocean.html
 				
 				
 				// skybox
@@ -285,12 +285,14 @@
 				// objects
 				function createBoxLayout() {
 					var map = [ 
-					[1, 2, 1, 1, 2, 1, ], 
-					[2, 1, 2, 3, 4, 2, ],
-					[2, 1, 2, 3, 5, 1, ],
-					[3, 1, 11, 12, 6, 5, ],
-					[2, 1, 10, 13, 7, 2, ],
-					[1, 2, 9, 8, 2, 1, ]
+					[0, 5, 1, 1, 0, 3, 1, 0],
+					[0, 1, 2, 0, 0, 2, 1, 1], 
+					[1, 2, 3, 2, 0, 4, 2, 0],
+					[1, 2, 2, 4, 0, 5, 1, 0],
+					[0,3, 2, 11, 12, 6, 5, 1],
+					[1,2, 2, 10, 13, 7, 2, 0],
+					[0, 1, 2, 9, 8, 2, 1, 0],
+					[1, 0, 4, 1, 3, 1, 0, 0]
 					];
 				
 					var widthOffset = UNITWIDTH / 2;
@@ -300,10 +302,62 @@
 					totalBoxWide = map[0].length;
 					for (var i = 0; i < totalBoxWide; i++) {
 						for (var j = 0; j < map[i].length; j++) {
+							if (map[i][j] > 0) {
 								var boxGeometry = new THREE.BoxGeometry(UNITWIDTH, UNITHEIGHT*map[i][j], UNITWIDTH);
+								
+								var textureLoader = new THREE.TextureLoader();
+
+								var boxTexture = textureLoader.load('js/textures/diffuse.jpg');
+								//var boxBumpMap = textureLoader.load('js/textures/bump.jpg');
+								//var boxNormalMap = textureLoader.load('js/textures/normal.jpg');
+								//var boxAoMap = textureLoader.load('js/textures/.jpg');
+
+									// wrapS defines how the texture is wrapped horizontally and corresponds to U in UV mapping
+									// wrapT defines how the texture is wrapped vertically and corresponds to V in UV mapping
+									
+									boxTexture.wrapS = THREE.RepeatWrapping;
+									boxTexture.wrapT = THREE.RepeatWrapping;
+									boxTexture.repeat.x = 1;
+									boxTexture.repeat.y 
+										if (map[i][j] > 1){
+											boxTexture.repeat.set(1,1,);
+										}
+										if (map[i][j] > 2){
+											boxTexture.repeat.set(1,2,);
+										}
+										if (map[i][j] > 3){
+											boxTexture.repeat.set(1,3,);
+										}
+										if (map[i][j] > 4){
+											boxTexture.repeat.set(1,4,);
+										}
+										if (map[i][j] > 5){
+											boxTexture.repeat.set(1,5,);
+										}
+										if (map[i][j] > 6){
+											boxTexture.repeat.set(1,6,);
+										}
+										if (map[i][j] > 7){
+											boxTexture.repeat.set(1,7,);
+										}
+										if (map[i][j] > 8){
+											boxTexture.repeat.set(1,8,);
+										}
+										if (map[i][j] > 9){
+											boxTexture.repeat.set(1,9,);
+										}
+										if (map[i][j] > 10){
+											boxTexture.repeat.set(1,10,);
+										}
+	
+	
 								var boxMaterial = new THREE.MeshPhongMaterial({
-								color: 0xEED6AF,
-								});
+									color: 0xffffff,
+									map: boxTexture, 
+									//bumpMap: boxBumpMap,
+									//normalMap: boxNormalMap, 
+									//aoMap: boxAoMap
+								}); 
 								
 								var box = new THREE.Mesh(boxGeometry, boxMaterial);
 								
@@ -311,9 +365,12 @@
 								box.position.y = heightOffset;
 								box.position.x = (j - totalBoxWide / 2) * UNITWIDTH + widthOffset;
 								
+								box.receiveShadow = true;
+								box.castShadow = true;
 								scene.add(box);
 								objects.push(box);
-							
+							}
+						
 						}
 					
 					}
@@ -331,7 +388,7 @@
 
 				if ( controlsEnabled === true ) {
 
-					raycaster.ray.origin.copy( controls.getObject().position );
+					raycaster.ray.origin.copy( controls..getObject().position );
 					raycaster.ray.origin.y -= 10;
 
 					var intersections = raycaster.intersectObjects( objects );
@@ -354,7 +411,7 @@
 					if ( moveLeft || moveRight ) velocity.x -= direction.x * 800.0 * delta;
 
 					if ( onObject === true ) {
-
+						
 						velocity.y = Math.max( 0, velocity.y );
 						canJump = true;
 
@@ -365,14 +422,13 @@
 					controls.getObject().translateZ( velocity.z * delta );
 
 					if ( controls.getObject().position.y < 10 ) {
-
+						
 						velocity.y = 0;
 						controls.getObject().position.y = 10;
 
 						canJump = true;
 						
 					}
-					
 					
 					if(water) {
 						
@@ -390,7 +446,25 @@
 
 			
 			//collision
+			function rayIntersect(ray, distance) {
+				var intersects = ray.intersectObjects(objects);
+	
+				if ( controlsEnabled === true ) {
+					var onObject = intersects.length > 0;
+				}
+	
+				for (var i = 0; i < intersects.length; i++) {
+				// Check if there's a collision
+					if (intersects[i].distance < distance) {
+						return true;
+					}
+				}
+				return false;
+			}
+			
+	
 			function detectPlayerCollision() {
+				
 				var rotationMatrix;
     
 				var cameraDirection = controls.getDirection(new THREE.Vector3(0, 0, 0)).clone();
@@ -423,15 +497,15 @@
 			}
 			
 			
-			function rayIntersect(ray, distance) {
-				var intersects = ray.intersectObjects(objects);
-				for (var i = 0; i < intersects.length; i++) {
-      
-				if (intersects[i].distance < distance) {
-					return true;
-					}
-				}
-				return false;
+			//Umrechnung Grad in Radiant
+			function degreesToRadians(degrees) {
+				return degrees * Math.PI / 180;
+			}
+
+
+			//Umrechnung Radiant in Grad
+			function radiansToDegrees(radians) {
+				return radians * 180 / Math.PI;
 			}
 			
 			
@@ -452,5 +526,5 @@
 					sound.setVolume( 1 );
 					sound.play();
 				});
-			
+				
 				water.add( sound );
